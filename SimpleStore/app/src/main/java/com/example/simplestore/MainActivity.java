@@ -28,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
     private final int MY_WRITE_REQUEST_CODE = 1;
     private final int MY_READ_REQUEST_CODE = 2;
     Button installButton;
-//    private final String myURL = "http://localhost:8080/app-debug.apk";
     private final String myURL = "http://15.235.163.133:8000/app-debug.apk";
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
