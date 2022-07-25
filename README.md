@@ -229,6 +229,7 @@ Tạo ra thư mục để ta có thể lưu app
 - Sau đó cài đặt như trên.
 - Trong quá trình cài đặt nếu người dùng huỷ hoặc xảy ra sự cố thì ta huỷ và xoá
   file.
+- Lưu ý quá trình cài đặt ta nên đặt ở threading
 
 ## Thread và Multi Threading trong Android
 
