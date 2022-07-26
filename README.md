@@ -214,10 +214,10 @@ Tạo ra thư mục để ta có thể lưu app
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path
+    <files-path
         name="files_root"
         path="Android/data/${applicationId}" />
-    <external-path
+    <files-path
         name="external_files"
         path="." />
 </paths>

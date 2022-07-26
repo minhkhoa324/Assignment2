@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.strictmode.WebViewMethodCalledOnWrongThreadViolation;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
@@ -27,8 +29,9 @@ import java.net.URL;
 public class MainActivity extends AppCompatActivity {
     private final int MY_WRITE_REQUEST_CODE = 1;
     private final int MY_READ_REQUEST_CODE = 2;
+    public static String packageName;
     Button installButton;
-    private final String myURL = "http://15.235.163.133:8000/app-debug.apk";
+    private final String myURL = "http://15.235.163.133:8000/camera-app.apk";
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -38,15 +41,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        packageName = getApplicationContext().getPackageName();
         installButton = findViewById(R.id.btnInstall);
         installButton.setOnClickListener(view -> {
-            if (hasWritePermission()) {
-                if (installApp()) {
-                    installAPK();
-                }
-            } else {
-                requestPermission();
-            }
+//            if (hasWritePermission()) {
+//                if (installApp()) {
+//                    installAPK();
+//                }
+//            } else {
+//                requestPermission();
+//            }
+//            if (installApp()) {
+                installAPK();
+//            }
         });
     }
 
@@ -69,15 +76,19 @@ public class MainActivity extends AppCompatActivity {
                     URL url = new URL(f_url);
                     InputStream in = url.openStream();
                     BufferedInputStream bis = new BufferedInputStream(in);
-                    FileOutputStream fos = new FileOutputStream(Environment.getExternalStorageDirectory().toString() + "/app.apk");
+                    FileOutputStream fos = new FileOutputStream(getFilesDir().toString() + "/app.apk");
                     Log.d("download", "download file from " + f_url);
                     byte[] data = new byte[1024];
                     int count;
                     while ((count = bis.read(data, 0, 1024)) != -1) {
                         fos.write(data, 0, count);
                     }
+                    fos.flush();
+                    fos.close();
+                    bis.close();
+                    Log.d("Good", "done");
                 } catch (Exception e) {
-                    Log.d("wrong", "something wrong");
+                    Log.e("wrong", "something wrong");
                     e.printStackTrace();
                 }
             }
@@ -91,9 +102,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void installAPK(){
-        String PATH = Environment.getExternalStorageDirectory() + "/" + "app.apk";
+//        String PATH = getFilesDir().toString() + "/camera_app.apk";
+        @SuppressLint("SdCardPath") String PATH = "/data/user/0/com.example.simplestore/files/camera-app.apk";
+
         File file = new File(PATH);
+        Log.d("Well", "I'm in" + PATH);
         if(file.exists()) {
+            Log.d("Good", "Found the file");
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uriFromFile(getApplicationContext(), new File(PATH)), "application/vnd.android.package-archive");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -104,10 +119,11 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
                 Log.e("TAG", "Error in opening the file!");
             }
-        }else{
-            Toast.makeText(getApplicationContext(),"installing",Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(getApplicationContext(),"installing", Toast.LENGTH_LONG).show();
         }
     }
+
     Uri uriFromFile(Context context, File file) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file);
