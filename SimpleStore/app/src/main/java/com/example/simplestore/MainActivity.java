@@ -29,43 +29,17 @@ import java.net.URL;
 public class MainActivity extends AppCompatActivity {
     private final int MY_WRITE_REQUEST_CODE = 1;
     private final int MY_READ_REQUEST_CODE = 2;
-    public static String packageName;
     Button installButton;
     private final String myURL = "http://15.235.163.133:8000/camera-app.apk";
-    private static String[] PERMISSIONS_STORAGE = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        packageName = getApplicationContext().getPackageName();
         installButton = findViewById(R.id.btnInstall);
         installButton.setOnClickListener(view -> {
-//            if (hasWritePermission()) {
-//                if (installApp()) {
-//                    installAPK();
-//                }
-//            } else {
-//                requestPermission();
-//            }
-//            if (installApp()) {
-                installAPK();
-//            }
+            installApp();
         });
-    }
-
-    private boolean hasWritePermission() {
-        return ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestPermission() {
-        ActivityCompat.requestPermissions(this,
-                PERMISSIONS_STORAGE,
-                MY_WRITE_REQUEST_CODE);
     }
 
     private String downloadFile(String f_url) {
@@ -86,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
                     fos.flush();
                     fos.close();
                     bis.close();
-                    Log.d("Good", "done");
+                    installAPK();
                 } catch (Exception e) {
                     Log.e("wrong", "something wrong");
                     e.printStackTrace();
@@ -102,9 +76,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void installAPK(){
-//        String PATH = getFilesDir().toString() + "/camera_app.apk";
-        @SuppressLint("SdCardPath") String PATH = "/data/user/0/com.example.simplestore/files/camera-app.apk";
-
+        String PATH = getFilesDir().toString() + "/app.apk";
         File file = new File(PATH);
         Log.d("Well", "I'm in" + PATH);
         if(file.exists()) {

@@ -270,3 +270,149 @@ Syntax của _Executor_ như sau:
    }
  }
 ```
+
+## Tổng hợp về 2 app
+
+## App camera scan code QR
+
+Ta sẽ dụng API _CameraX_ và _Google MLKit_ để scan code QR.
+
+Trước tiên ta cần phải thêm dependencies như sau
+
+```java
+    // Khai bao phiên bản CameraX mà ta sẽ sử dụng
+    def camerax_version = '1.1.0'
+    implementation "androidx.camera:camera-core:${camerax_version}"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-view:${camerax_version}"
+    implementation "androidx.camera:camera-extensions:${camerax_version}"
+  // Khai bao google MKKit đề scan QR code
+    implementation 'com.google.mlkit:barcode-scanning:17.0.2'
+```
+
+Còn đây là hàm chính để ta xử lý hình ảnh
+
+```Java
+    private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
+        BarcodeScannerOptions options =
+                new BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(
+                                Barcode.FORMAT_QR_CODE,
+                                Barcode.FORMAT_AZTEC)
+                        .build();
+        BarcodeScanner scanner = BarcodeScanning.getClient(options);
+        ImageAnalysis imageAnalysis =
+                new ImageAnalysis.Builder().setTargetResolution(new Size(1280, 720))
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), new ImageAnalysis.Analyzer() {
+            @Override
+            public void analyze(@NonNull ImageProxy imageProxy) {
+                // Remember this line
+                @SuppressLint("UnsafeOptInUsageError") Image mediaImage = imageProxy.getImage();
+                if (mediaImage != null) {
+                    InputImage image =
+                            InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+                    Task<List<Barcode>> result = scanner.process(image)
+                            .addOnSuccessListener(barcodes -> {
+                                TextView displayResult = findViewById(R.id.resultView);
+                                for (Barcode barcode : barcodes) {
+                                    displayResult.append(barcode.getRawValue());
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                }
+                            })
+                            .addOnCompleteListener(new OnCompleteListener<List<Barcode>>() {
+                                @Override
+                                public void onComplete(@NonNull Task<List<Barcode>> task) {
+                                    imageProxy.close();
+                                }
+                            });
+                }
+            }
+        });
+        Preview preview = new Preview.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+        cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector,
+                imageAnalysis, preview);
+    }
+
+```
+
+Còn đối với chương trình Store thì như sau:
+
+Ta có 2 hàm chính là _downloadFile_ và _instalAPK_
+
+Lưu ý là download file thì ta phải làm trong thread khác trong được chạy trong main thread
+
+```Java
+    private String downloadFile(String f_url) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    URL url = new URL(f_url);
+                    InputStream in = url.openStream();
+                    BufferedInputStream bis = new BufferedInputStream(in);
+                    FileOutputStream fos = new FileOutputStream(getFilesDir().toString() + "/app.apk");
+                    byte[] data = new byte[1024];
+                    int count;
+                    while ((count = bis.read(data, 0, 1024)) != -1) {
+                        fos.write(data, 0, count);
+                    }
+                    fos.flush();
+                    fos.close();
+                    bis.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        return null;
+    }
+
+```
+
+Còn đây là hàm _installAPK()_
+
+```Java
+    private void installAPK(){
+        String PATH = getFilesDir().toString() + "/camera_app.apk";
+        File file = new File(PATH);
+        if(file.exists()) {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uriFromFile(getApplicationContext(), new File(PATH)), "application/vnd.android.package-archive");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try {
+                getApplicationContext().startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                e.printStackTrace();
+                Log.e("TAG", "Error in opening the file!");
+            }
+        } else {
+            Toast.makeText(getApplicationContext(),"installing", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    Uri uriFromFile(Context context, File file) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file);
+        } else {
+            return Uri.fromFile(file);
+        }
+    }
+
+```
+
+[Video test](https://youtu.be/kPITkPPNBKA)
+
+Các nâng cấp trong tương lai
+
+- Thêm nhiều app lập adapater list để lựa chọn
+- Thêm các progressing bar cho quá trình download và installing.
