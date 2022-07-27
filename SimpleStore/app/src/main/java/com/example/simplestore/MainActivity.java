@@ -17,7 +17,13 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.strictmode.WebViewMethodCalledOnWrongThreadViolation;
 import android.util.Log;
+import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -25,83 +31,35 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private final int MY_WRITE_REQUEST_CODE = 1;
     private final int MY_READ_REQUEST_CODE = 2;
     Button installButton;
     private final String myURL = "http://15.235.163.133:8000/camera-app.apk";
-
+    ArrayAdapter<String> myAdapter;
+    private ArrayList<String> appName = new ArrayList<>();
+    ListView myList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        installButton = findViewById(R.id.btnInstall);
-        installButton.setOnClickListener(view -> {
-            installApp();
+        myList = findViewById(R.id.appList);
+        appName.add("Camera");
+        appName.add("Wifi");
+        appName.add("Bluetooth");
+        myAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, appName);
+        myList.setAdapter(myAdapter);
+        myList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position,
+                                    long id) {
+                Intent intent = new Intent(MainActivity.this, appDescreption.class);
+                String message = (String) (myList.getItemAtPosition(position));
+                intent.putExtra("App name", message);
+                startActivity(intent);
+            }
         });
     }
-
-    private String downloadFile(String f_url) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    URL url = new URL(f_url);
-                    InputStream in = url.openStream();
-                    BufferedInputStream bis = new BufferedInputStream(in);
-                    FileOutputStream fos = new FileOutputStream(getFilesDir().toString() + "/app.apk");
-                    Log.d("download", "download file from " + f_url);
-                    byte[] data = new byte[1024];
-                    int count;
-                    while ((count = bis.read(data, 0, 1024)) != -1) {
-                        fos.write(data, 0, count);
-                    }
-                    fos.flush();
-                    fos.close();
-                    bis.close();
-                    installAPK();
-                } catch (Exception e) {
-                    Log.e("wrong", "something wrong");
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-        return null;
-    }
-
-    private boolean installApp() {
-        downloadFile(myURL);
-        return true;
-    }
-
-    private void installAPK(){
-        String PATH = getFilesDir().toString() + "/app.apk";
-        File file = new File(PATH);
-        Log.d("Well", "I'm in" + PATH);
-        if(file.exists()) {
-            Log.d("Good", "Found the file");
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uriFromFile(getApplicationContext(), new File(PATH)), "application/vnd.android.package-archive");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            try {
-                getApplicationContext().startActivity(intent);
-            } catch (ActivityNotFoundException e) {
-                e.printStackTrace();
-                Log.e("TAG", "Error in opening the file!");
-            }
-        } else {
-            Toast.makeText(getApplicationContext(),"installing", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    Uri uriFromFile(Context context, File file) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file);
-        } else {
-            return Uri.fromFile(file);
-        }
-    }
-
 }

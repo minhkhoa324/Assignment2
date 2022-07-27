@@ -410,9 +410,15 @@ Còn đây là hàm _installAPK()_
 
 ```
 
-[Video test](https://youtu.be/kPITkPPNBKA)
+[Video test v1](https://youtu.be/kPITkPPNBKA)
+[Video test v2](https://youtu.be/xP7eUziB9nc)
 
 Các nâng cấp trong tương lai
 
 - Thêm nhiều app lập adapater list để lựa chọn
 - Thêm các progressing bar cho quá trình download và installing.
+
+Các vấn đề cần phải học hỏi thêm
+
+- Về thread và handler để xử lý việc tải xuống nhiều mục cũng như tiếp tục tải khi ẩn chuong trình.
+- Về việc save trạng thái của activity.
